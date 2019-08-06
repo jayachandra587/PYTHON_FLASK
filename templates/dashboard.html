@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <title> RTB Campaigns </title>
+  </head>
+  <body>
+
+    <ul><div style="color:red;font-size:20px;">Name</div> &nbsp;&nbsp; <div id="name" style="color:blue;font-size:20px;"></div></ul>
+    <ul><div style="color:red;font-size:20px;">Spend</div> &nbsp;&nbsp; <div id="spend" style="color:blue;font-size:20px;"></div></ul>
+    <ul><div style="color:red;font-size:20px;">Wins</div> &nbsp;&nbsp; <div id="wins" style="color:blue;font-size:20px;"></div></ul>
+
+    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      var socket = io('localhost:5000/hello');
+
+      socket.on('connect', function(){
+        console.log('connection made');
+        socket.emit('join', {'room':'queues'});
+        socket.emit('queues_latest');
+      });
+
+      socket.on('queues_data_push', function(msg){
+        console.log(msg);
+        // $('#tableDiv').empty();
+        $('#name').html(msg.name);
+        $('#spend').html(msg.spend);
+        $('#wins').html(msg.wins);
+      });
+    </script>
+  </body>
+</html>

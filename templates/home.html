@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <title>Swaddesh Portal </title>
+        <link rel=stylesheet type=text/css href="https://d119nv80d5uzy3.cloudfront.net/base.css">
+    </head>
+    <body>
+        <div id="container">
+            <div class="title">
+                <h1> Swaddesh Portal </h1>
+            </div>
+
+            
+            <div id="campaigns" style="width:100%;float:left;">
+                <div class="small_title">
+                    <h1 style="color:black;margin-left:20px;background:white; padding-left:20px"> 
+                        Yesterday's stats
+                    </h1>
+                </div>
+                <div id="content">
+                    <table id="domain_daily" border = 0 cellspacing=5 cellpadding=5 style="color:blue;">
+                        <thead>
+                            <tr>
+                                <td> Restaurant Name </td>
+                                <td> Source </td>
+                                <td> Total Orders </td>
+                                <td> Sales </td>
+                                <td> Orders delivered </td>
+                                <td> Orders cancelled </td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, value in restaurant_data.items() %}
+                              <tr>
+                                 <td> <a href="/restaurant/details/?restaurant_id={{key}}"> {{ value[0] }} </a> </td>
+                                 <td> {{ value[1] }} </td>
+                                 <td> {{ value[2] }} </td>
+                                 <td> {{ value[3] }} </td>
+                                 <td> {{ value[4] }} </td>
+                                 <td> {{ value[5] }} </td>
+                              </tr>
+                           {% endfor %}
+                    </table>
+                </div>
+            </div>
+
+            <div id="config">
+                <div class="small_title">
+                    <h1 style="color:black;margin-left:20px;background:white; padding-left:20px"> Other links </h1>
+                </div>
+                <div id="content">
+                    <table border = 0 cellspacing=5 cellpadding=5 style="color:blue;">
+                        <tr>
+                            <th align="left"> <a href="/stats/revenue/" > Upload Swiggy </a></th>
+                        </tr>
+                        <tr>
+                            <th align="left"> <a href="/stats/revenue/" > Upload Zomato </a></th>
+                        </tr>
+                        <tr>
+                            <th align="left"> <a href="/stats/revenue/" > Upload Chef Desk </a></th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </body>
+</html>
+ 
