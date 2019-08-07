@@ -95,18 +95,18 @@ def get_campaign_stats():
     redis_client = redis.StrictRedis(host="rtb-cache.r1kpgb.ng.0001.usw2.cache.amazonaws.com")
     fm_wins = redis_client.get("win_70848460555_" + today_data)
     fm_spend = redis_client.get("budget_70848460555_" + today_data)
-    ebay_wins = redis_client.get("win_70848460555_" + today_data)
-    ebay_spend = redis_client.get("budget_70848460555_" + today_data)
+    ebay_wins = redis_client.get("win_67361349506_" + today_data)
+    ebay_spend = redis_client.get("budget_67361349506_" + today_data)
     data = [
         {
             "name": "FM",
-            "wins": fm_wins,
-            "spend": fm_spend
+            "wins": fm_wins.decode("utf-8"),
+            "spend": fm_spend.decode("utf-8")
         },
         {
             "name": "Ebay",
-            "wins": ebay_wins,
-            "spend": ebay_spend
+            "wins": ebay_wins.decode("utf-8"),
+            "spend": ebay_spend.decode("utf-8")
         }
     ]
     return data
