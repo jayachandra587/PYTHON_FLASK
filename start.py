@@ -144,10 +144,10 @@ def get_campaign_stats():
             final_record["today_spend"] = west_record["today_spend"] + east_record["today_spend"]
             final_record["wins"] = west_record["wins"] + east_record["wins"]
             final_record["inbounds"] = west_record["inbounds"] + east_record["inbounds"]
-            final_record["ad_ctr"] = (west_record["ad_ctr"] + east_record["ad_ctr"])/2
+            final_record["ad_ctr"] = round((west_record["ad_ctr"] + east_record["ad_ctr"])/2, 3)
             final_record["conversions"] = west_record["conversions"] + east_record["conversions"]
-            final_record["conversion_rate"] = (west_record["conversion_rate"] + east_record["conversion_rate"])/2
-            final_record["cpa"] = (west_record["cpa"] + east_record["cpa"])/2
+            final_record["conversion_rate"] = round((west_record["conversion_rate"] + east_record["conversion_rate"])/2, 3)
+            final_record["cpa"] = round((west_record["cpa"] + east_record["cpa"])/2, 3)
             both_regions_data[key] = final_record
     campaign_stats = {
         "west_campaigns_data": {
