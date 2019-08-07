@@ -1,23 +1,30 @@
-<div class="container">
-  <h2> RTB Portal </h2>
-  <p> Realtime performance monitoring for RTB </p>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Campaign Name</th>
-        <th> Wins </th>
-        <th> Spend </th>
-      </tr>
-    </thead>
+<h4> {{region}} </h4>
+<table class="table">
+<thead>
+  <tr>
+      <th>Campaign Name</th>
+      <th> Spend </th>
+      <th> Wins </th>
+      <th> Inbounds </th>
+      <th> AdCTR </th>
+      <th> Conversions </th>
+      <th> Conversion Rate </th>
+      <th> CPA </th>
+  </tr>
+</thead>
 
-    <tbody>
-        {{#each campaigns}}
-            <tr>
-                <td>{{this.name}}</td>
-                <td>{{this.wins}}</td>
-                <td>{{this.spend}}</td>
-            </tr>
-        {{/each}}
-    </tbody>
-  </table>
-</div>
+<tbody>
+    {{#each campaigns}}
+        <tr>
+            <td>{{this.name}}</td>
+            <td>{{this.today_spend}}</td>
+            <td>{{this.wins}}</td>
+            <td>{{this.inbounds}}</td>
+            <td>{{this.ad_ctr}}</td>
+            <td>{{this.conversions}}</td>
+            <td>{{this.conversion_rate}}</td>
+            <td>{{this.cpa}}</td>
+        </tr>
+    {{/each}}
+</tbody>
+</table>

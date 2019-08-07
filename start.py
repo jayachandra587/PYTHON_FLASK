@@ -2,22 +2,20 @@
 Prototype for Real time Stats view
 """
 
-#import eventlet
-#eventlet.monkey_patch()
+# Local libraries
 import time
+import os
+import json
 from threading import Thread
-from pymongo import MongoClient
+
+# Third party libraries
+import requests
 from flask import Flask, render_template
-from bson.json_util import dumps
 from flask_socketio import SocketIO, emit, join_room
-import redis
-from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-# socketio = SocketIO(app)
-# The below line works, but is not what I want. I need to use eventlet
-socketio = SocketIO(app, async_mode='threading')
+app.config['SECRET_KEY'] = os.urandom(12)
+socket_io = SocketIO(app, async_mode='threading')
 
 
 @app.route('/')
@@ -66,7 +64,7 @@ def dashboard():
     return render_template('dashboard.html')
 
 
-@socketio.on('connect', namespace='/hello')
+@socket_io.on('connect', namespace='/hello')
 def sys_connect():
     """
     Socket connection
@@ -75,7 +73,7 @@ def sys_connect():
     print('client connected')
 
 
-@socketio.on('join', namespace='/hello')
+@socket_io.on('join', namespace='/hello')
 def join(message):
     """
     Joining socket room
@@ -86,32 +84,89 @@ def join(message):
     print('client joined room %s' % message['room'])
 
 
+def fetch_api(url):
+    """
+    Make an API call to tracking servers to get tracking details
+    :param url:
+    :return:
+    """
+    data = requests.get(url)
+    response_data = json.loads(data.content)
+    if response_data["status"] == "success":
+        return response_data["response"]
+    return {}
+
+
+def format_campaign_data(campaign_data):
+    """
+    Function to format campaign data
+    :param campaign_data:
+    :return:
+    """
+    new_campaign_data = {
+        "name": campaign_data[0],
+        "budget_cap": campaign_data[1],
+        "budget_spent": campaign_data[2],
+        "status": campaign_data[3],
+        "bid_cap": campaign_data[4],
+        "today_spend": campaign_data[5],
+        "wins": campaign_data[6],
+        "inbounds": campaign_data[7],
+        "ad_ctr": campaign_data[8],
+        "conversions": campaign_data[9],
+        "conversion_rate": campaign_data[10],
+        "cpa": campaign_data[11]
+    }
+    return new_campaign_data
+
+
 def get_campaign_stats():
     """
     Fetch campaign stats from redis cache
     :return:
     """
-    today_data = datetime.now().strftime("%Y-%m-%d")
-    redis_client = redis.StrictRedis(host="rtb-cache.r1kpgb.ng.0001.usw2.cache.amazonaws.com")
-    fm_wins = redis_client.get("win_70848460555_" + today_data)
-    fm_spend = redis_client.get("budget_70848460555_" + today_data)
-    ebay_wins = redis_client.get("win_67361349506_" + today_data)
-    ebay_spend = redis_client.get("budget_67361349506_" + today_data)
-    data = [
-        {
-            "name": "FM",
-            "wins": fm_wins.decode("utf-8"),
-            "spend": fm_spend.decode("utf-8")
+    west_url = "https://offers.expertsaver.net/stats/campaigns"
+    east_url = "https://rtbapi.clicksco.com/stats/campaigns"
+    west_campaigns_data = fetch_api(west_url)
+    east_campaigns_data = fetch_api(east_url)
+    both_regions_data = {}
+    west_campaigns_data_new = {}
+    east_campaigns_data_new = {}
+    for key in west_campaigns_data:
+        # print(west_campaigns_data[key][3])
+        if west_campaigns_data[key][3] == "1":  # Check if the campaign is active or not
+            final_record = {}
+            east_record = format_campaign_data(east_campaigns_data.get(key, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+            west_record = format_campaign_data(west_campaigns_data.get(key, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+            west_campaigns_data_new[key] = west_record
+            east_campaigns_data_new[key] = east_record
+            final_record["name"] = west_record["name"]
+            final_record["today_spend"] = west_record["today_spend"] + east_record["today_spend"]
+            final_record["wins"] = west_record["wins"] + east_record["wins"]
+            final_record["inbounds"] = west_record["inbounds"] + east_record["inbounds"]
+            final_record["ad_ctr"] = (west_record["ad_ctr"] + east_record["ad_ctr"])/2
+            final_record["conversions"] = west_record["conversions"] + east_record["conversions"]
+            final_record["conversion_rate"] = (west_record["conversion_rate"] + east_record["conversion_rate"])/2
+            final_record["cpa"] = (west_record["cpa"] + east_record["cpa"])/2
+            both_regions_data[key] = final_record
+    campaign_stats = {
+        "west_campaigns_data": {
+            "stats": west_campaigns_data_new,
+            "region": "West Region"
         },
-        {
-            "name": "Ebay",
-            "wins": ebay_wins.decode("utf-8"),
-            "spend": ebay_spend.decode("utf-8")
+        "east_campaigns_data": {
+            "stats": east_campaigns_data_new,
+            "region": "East Region"
+        },
+        "both_regions_data": {
+            "stats": both_regions_data,
+            "region": "Both Regions"
         }
-    ]
-    return data
+    }
+    return campaign_stats
 
-@socketio.on('queues_latest', namespace='/hello')
+
+@socket_io.on('queues_latest', namespace='/hello')
 def latest_queues():
     """
     Fetching latest data
@@ -119,8 +174,6 @@ def latest_queues():
     """
     print('client requested latest queues data')
     data = get_campaign_stats()
-    # data = [{"name": "FM", "spend": time.time()+1, "wins": time.time()+2},
-    # {"name": "FM", "spend": time.time()+3, "wins": time.time()+4}]
     emit('queues_data_push', data)
 
 
@@ -130,9 +183,7 @@ def emit_queues():
     :return:
     """
     data = get_campaign_stats()
-    # data = [{"name": "FM", "spend": time.time()+1, "wins": time.time()+2},
-    # {"name": "FM", "spend": time.time()+3, "wins": time.time()+4}]
-    socketio.emit('queues_data_push', data, namespace='/hello', room='queues')
+    socket_io.emit('queues_data_push', data, namespace='/hello', room='queues')
 
 
 def start_scheduler():
@@ -146,7 +197,7 @@ def start_scheduler():
         :return:
         """
         while True:
-            time.sleep(2)
+            time.sleep(5)
             emit_queues()
     thready = Thread(target=scheduler_loop)
     thready.daemon = True
@@ -155,4 +206,4 @@ def start_scheduler():
 
 if __name__ == '__main__':
     start_scheduler()
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socket_io.run(app, host='0.0.0.0', port=5000)
