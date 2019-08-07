@@ -11,6 +11,7 @@ from flask import Flask, render_template
 from bson.json_util import dumps
 from flask_socketio import SocketIO, emit, join_room
 import redis
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -85,6 +86,31 @@ def join(message):
     print('client joined room %s' % message['room'])
 
 
+def get_campaign_stats():
+    """
+    Fetch campaign stats from redis cache
+    :return:
+    """
+    today_data = datetime.now().strftime("%Y-%m-%d")
+    redis_client = redis.StrictRedis(host="rtb-cache.r1kpgb.ng.0001.usw2.cache.amazonaws.com")
+    fm_wins = redis_client.get("win_70848460555_" + today_data)
+    fm_spend = redis_client.get("budget_70848460555_" + today_data)
+    ebay_wins = redis_client.get("win_70848460555_" + today_data)
+    ebay_spend = redis_client.get("budget_70848460555_" + today_data)
+    data = [
+        {
+            "name": "FM",
+            "wins": fm_wins,
+            "spend": fm_spend
+        },
+        {
+            "name": "Ebay",
+            "wins": ebay_wins,
+            "spend": ebay_spend
+        }
+    ]
+    return data
+
 @socketio.on('queues_latest', namespace='/hello')
 def latest_queues():
     """
@@ -92,10 +118,9 @@ def latest_queues():
     :return:
     """
     print('client requested latest queues data')
-    client = MongoClient()
-    db_client = client.company
-    employeeslist = db_client.employees
-    data = dumps(employeeslist.find())
+    data = get_campaign_stats()
+    # data = [{"name": "FM", "spend": time.time()+1, "wins": time.time()+2},
+    # {"name": "FM", "spend": time.time()+3, "wins": time.time()+4}]
     emit('queues_data_push', data)
 
 
@@ -104,10 +129,9 @@ def emit_queues():
     Send latest data to client
     :return:
     """
-    redis_client = redis.StrictRedis(host="rtb-cache.r1kpgb.ng.0001.usw2.cache.amazonaws.com")
-    wins = redis_client.get("win_70848460555_2019-08-06")
-    spend = redis_client.get("budget_70848460555_2019-08-06")
-    data = {"name": "FM", "spend": spend, "wins": wins}
+    data = get_campaign_stats()
+    # data = [{"name": "FM", "spend": time.time()+1, "wins": time.time()+2},
+    # {"name": "FM", "spend": time.time()+3, "wins": time.time()+4}]
     socketio.emit('queues_data_push', data, namespace='/hello', room='queues')
 
 
@@ -122,7 +146,7 @@ def start_scheduler():
         :return:
         """
         while True:
-            time.sleep(1)
+            time.sleep(2)
             emit_queues()
     thready = Thread(target=scheduler_loop)
     thready.daemon = True
@@ -131,4 +155,4 @@ def start_scheduler():
 
 if __name__ == '__main__':
     start_scheduler()
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0', port=5000)

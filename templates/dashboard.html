@@ -2,17 +2,18 @@
 <html>
   <head>
     <title> RTB Campaigns </title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+      <script src="/static/handlebars/handlebars-v4.1.2.js"></script>
+      <script src="/static/handlebars/campaigns.js"></script>
   </head>
   <body>
-
-    <ul><div style="color:red;font-size:20px;">Name</div> &nbsp;&nbsp; <div id="name" style="color:blue;font-size:20px;"></div></ul>
-    <ul><div style="color:red;font-size:20px;">Spend</div> &nbsp;&nbsp; <div id="spend" style="color:blue;font-size:20px;"></div></ul>
-    <ul><div style="color:red;font-size:20px;">Wins</div> &nbsp;&nbsp; <div id="wins" style="color:blue;font-size:20px;"></div></ul>
+        <div id="campaigns"></div>
 
     <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
-    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
-      var socket = io('localhost:5000/hello');
+      var socket = io('http://34.221.230.35:5000/hello');
 
       socket.on('connect', function(){
         console.log('connection made');
@@ -20,12 +21,11 @@
         socket.emit('queues_latest');
       });
 
+      var template = Handlebars.templates['campaigns'];
+
       socket.on('queues_data_push', function(msg){
-        console.log(msg);
-        // $('#tableDiv').empty();
-        $('#name').html(msg.name);
-        $('#spend').html(msg.spend);
-        $('#wins').html(msg.wins);
+            var templateData = template({campaigns:msg});
+            $('#campaigns').html(templateData);
       });
     </script>
   </body>

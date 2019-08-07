@@ -1,0 +1,23 @@
+<div class="container">
+  <h2> RTB Portal </h2>
+  <p> Realtime performance monitoring for RTB </p>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Campaign Name</th>
+        <th> Wins </th>
+        <th> Spend </th>
+      </tr>
+    </thead>
+
+    <tbody>
+        {{#each campaigns}}
+            <tr>
+                <td>{{this.name}}</td>
+                <td>{{this.wins}}</td>
+                <td>{{this.spend}}</td>
+            </tr>
+        {{/each}}
+    </tbody>
+  </table>
+</div>
